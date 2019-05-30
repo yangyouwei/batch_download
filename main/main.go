@@ -23,7 +23,7 @@ var log_chan = make(chan string, 100)
 func dowload(url string, logs chan string) {
 	//文件下载
 	u, n, p := cut_string(url)
-	fmt.Println(u, n, p)
+	fmt.Println(url)
 	logs <- u + n + p
 }
 
@@ -33,6 +33,7 @@ func cut_string(str string) (url string, filenme string, list_path string) {
 	filenme = path.Base(a[0])
 	url = a[0]
 	list_path = a[1]
+	fmt.Println(a)
 	return
 }
 
@@ -45,6 +46,7 @@ func watch(urls chan string) {
 
 func log_write(result chan string) {
 	a := <-result
+	fmt.Println(a)
 	f, _ := os.OpenFile(result_log, os.O_WRONLY|os.O_APPEND, 0666)
 	buf := []byte(a + "\n")
 	f.Write(buf)
@@ -56,7 +58,6 @@ func main() {
 	go log_write(log_chan)
 	for {
 		url := <-chan_url
-		fmt.Println("for")
 		go dowload(url, log_chan)
 	}
 }
