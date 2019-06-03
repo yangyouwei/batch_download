@@ -10,9 +10,11 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sync"
 	"time"
 )
 
+var waitgroup sync.WaitGroup
 
 func main() {
 	//文件监控通道，以行为单位写入到chan
@@ -23,12 +25,17 @@ func main() {
 	go watch_log(ch)
 	//获取下载结果写入日志
 	go log_write(result_log)
-	for  {
-		a := <- ch
-		//fmt.Println(a)
-		//从url的chan获取下载地址，下载结果写入日志chan
-		go download(a,result_log)
+	for i := 1;i<100 ; i++ {
+		go func() {
+			for {
+				a := <- ch
+				download(a,result_log)
+			}
+
+		}()
 	}
+
+	log_write(result_log)
 }
 
 func log_write(ch chan string)  {
@@ -80,14 +87,14 @@ func download(durl string,ch chan string)  {
 	if err != nil {
 		panic(err)
 	}
-	if resp.ContentLength <= 0 {
-		log.Println("[*] Destination server does not support breakpoint download.")
-	}
+	//if resp.ContentLength <= 0 {
+	//	log.Println("[*] Destination server does not support breakpoint download.")
+	//}
 	raw := resp.Body
 	defer raw.Close()
 	reader := bufio.NewReaderSize(raw, 1024*32);
 
-	file, err := os.Create(filename)
+	file, err := os.Create("images/"+filename)
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +127,7 @@ func download(durl string,ch chan string)  {
 			}
 		}
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
 		}
 	}()
 
@@ -149,3 +156,4 @@ func download(durl string,ch chan string)  {
 		}
 	}
 }
+
